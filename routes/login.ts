@@ -1,44 +1,63 @@
-import * as express from 'express'
 import * as uuid from 'uuid'
 import utils from '../utils/utils'
-import userMongoSink from '../services/userMongoSink'
+import mongoSink from '../services/mongoSink'
 import logger from '../utils/logger'
+import { jwtVerify } from "../utils/middleware"
+import CONF from "../config"
+import { getCacheValue, setCacheValue, delCacheValue, expireCacheValue } from "../services/redis"
 
-// eslint-disable-next-line new-cap
-const router = express.Router();
+const loginErrorTimesTip = (cacheInfo) => {
+  if (CONF.LOGIN_ERROR_TIMES - cacheInfo.times - 1) {
+    return `还剩下${CONF.LOGIN_ERROR_TIMES - cacheInfo.times - 1}次机会`
+  } else {
+    return '账户已锁定，请稍候再试'
+  }
+}
 
-router.post("/login_verify", loginVerify);
-router.post("/token_login", tokenLogin);
-router.post("/register_verify", registerVerify);
-router.post("/refresh_token", refreshTokenFunc);
-router.put("/reset_password", resetPassword);
-
-async function loginVerify(req, res) {
+export async function loginVerify(req, res) {
   try {
     const { username, pwd } = req.body;
     logger.info("login_verify username pwd", username, pwd);
-    if (!username || !pwd) {
-      logger.warn("login_verify  用户名或密码不能为空！");
-      return utils.reportInvokeError(req, res, "用户名或密码不能为空");
-    }
-    const result = await userMongoSink.find({ username });
+    const cacheKey = `${CONF.LOGIN_FOR_CACHE}: ${username}`
+    const cacheInfo: { username: string, times: number } = await getCacheValue(cacheKey)
+    const times = cacheInfo ? (cacheInfo.times + 1) : 1;
+    const result = await mongoSink.find({ username }, {}, 'userInfo');
     if (!result.length) {
       logger.warn("login_verify  用户名错误！ username", username);
-      return utils.reportInvokeError(req, res, "用户名或密码不正确");
+      await setCacheValue(cacheKey, { username, times })
+      await expireCacheValue(cacheKey, CONF.EXPIRE_LOGIN_TIME)  //按秒计
+      return utils.reportInvokeError(
+        req, 
+        res, 
+        (cacheInfo && cacheInfo.times > 2) ? `用户名或密码不正确，${loginErrorTimesTip(cacheInfo)}` : "用户名或密码不正确"
+      );
     }
     const record = result[0];
     const dbPassword = record.password;
     const salt = record.salt;
     if (!salt || !dbPassword) {
       logger.warn("login_verify no db_password salt");
-      return utils.reportInvokeError(req, res, "用户名或密码不正确");
+      await setCacheValue(cacheKey, { username, times })
+      await expireCacheValue(cacheKey, CONF.EXPIRE_LOGIN_TIME)
+      return utils.reportInvokeError(
+        req, 
+        res, 
+        (cacheInfo && cacheInfo.times > 2) ? `用户名或密码不正确，${loginErrorTimesTip(cacheInfo)}` : "用户名或密码不正确"
+      );
     }
     const password = utils.encryptAES(pwd, salt);
     if (password !== dbPassword) {
       logger.warn("login_verify  密码错误！username", username);
-      return utils.reportInvokeError(req, res, "用户名或密码不正确");
+      await setCacheValue(cacheKey, { username, times })
+      await expireCacheValue(cacheKey, CONF.EXPIRE_LOGIN_TIME)
+      return utils.reportInvokeError(
+        req, 
+        res, 
+        (cacheInfo && cacheInfo.times > 2) ? `用户名或密码不正确，${loginErrorTimesTip(cacheInfo)}` : "用户名或密码不正确"
+      );
     } else {
-      const sendData = utils.dealWithLoginData(record)
+      delCacheValue(cacheKey)
+      const sendData = await utils.dealWithLoginData(record, "")
       return utils.writeResponse(res, sendData);
     }
   } catch (err) {
@@ -47,22 +66,20 @@ async function loginVerify(req, res) {
   }
 }
 
-function tokenLogin(req, res) {
+export function tokenLogin(req, res) {
   try {
     const token = req.headers.authorization
-    utils.jwtVerify(token, res, function (decoded) {
+    return jwtVerify(token, res, function (decoded) {
       const uuid = decoded.uuid;
-      logger.info("tokenLogin uuid", decoded);
+      logger.info("tokenLogin uuid", uuid);
       if (!uuid) {
         return utils.reportInvokeError(req, res, "用户不存在");
       }
-      const token = utils.refreshToken(uuid);
-      return userMongoSink.find({ uuid })
+      return mongoSink.find({ uuid }, {}, 'userInfo')
         .then(async (result) => {
           const record = result[0];
           if (record) {
-            const sendData = utils.dealWithLoginData(record)
-            sendData.token = token;
+            const sendData = await utils.dealWithLoginData(record, token)
             return utils.writeResponse(res, sendData);
           } else {
             logger.warn("tokenLogin uuid", uuid);
@@ -80,13 +97,10 @@ function tokenLogin(req, res) {
   }
 }
 
-async function registerVerify(req, res) {
+export async function registerVerify(req, res) {
   try {
-    const data = req.body;
-    const { username } = data;
-    if (!username) {
-      return utils.reportInvokeError(req, res, "用户名不能为空");
-    }
+    const { username } = req.body;
+    logger.info("registerVerify username", username)
     if (username.length > 32) {
       return utils.reportInvokeError(req, res, "用户名长度应小于32位");
     } else if (/^[0-9]/i.test(username)) {
@@ -94,7 +108,7 @@ async function registerVerify(req, res) {
     } else if (!/^[\u4e00-\u9fa5_a-zA-Z0-9]+$/.test(username)) {
       return utils.reportInvokeError(req, res, "用户名只能是数字字母下划线或中文");
     }
-    await userMongoSink.find({ username })
+    await mongoSink.find({ username }, {}, 'userInfo')
       .then(async (result) => {
         logger.info("registerVerify result.length", result.length);
         if (result.length) {
@@ -109,9 +123,9 @@ async function registerVerify(req, res) {
             salt,
             uuid: uuid.v4()
           };
-          await userMongoSink.update({ username }, obj)
+          await mongoSink.update({ username }, obj, true, 'userInfo')
             .then(() => {
-              logger.info("registerVerify success");
+              logger.info("registerVerify success username, pwd", username, pwd);
               const responseObj = {
                 response: "success",
                 password: pwd
@@ -126,18 +140,14 @@ async function registerVerify(req, res) {
   }
 }
 
-function refreshTokenFunc(req, res) {
+export function refreshTokenFunc(req, res) {
   try {
     const token = req.headers.authorization
-    logger.info("refreshTokenFunc token", token);
-    if (!token) {
-      logger.warn("refreshTokenFunc no token");
-      return utils.reportInvokeError(req, res, "token不能为空");
-    }
-    return utils.jwtVerify(token, res, async function (decoded) {
+    return jwtVerify(token, res, async function (decoded) {
       const uuid = decoded.uuid;
+      logger.info("refreshTokenFunc uuid", uuid)
       const responseObj = { token: {} };
-      responseObj.token = utils.refreshToken(uuid);
+      responseObj.token = await utils.refreshToken(uuid, token);
       return utils.writeResponse(res, responseObj);
     })
   } catch (err) {
@@ -146,16 +156,14 @@ function refreshTokenFunc(req, res) {
   }
 }
 
-async function resetPassword(req, res) {
+export async function resetPassword(req, res) {
   const token = req.headers.authorization
   const { oldPwd, newPwd } = req.body;
   try {
-    if (!oldPwd || !newPwd || !token) {
-      return utils.reportInvokeError(req, res, "原密码或新密码或token不能为空");
-    }
-    return utils.jwtVerify(token, res, async function (decoded) {
+    return jwtVerify(token, res, async function (decoded) {
       const uuid = decoded.uuid;
-      const result = await userMongoSink.find({ uuid });
+      logger.info("resetPassword oldPwd, newPwd, uuid", oldPwd, newPwd, uuid)
+      const result = await mongoSink.find({ uuid }, {}, 'userInfo');
       if (!result.length) {
         return utils.reportInvokeError(req, res, "用户名不存在");
       }
@@ -170,12 +178,12 @@ async function resetPassword(req, res) {
       }
       const salt = Buffer.from(utils.generateString(32), 'utf8').toString('hex');
       const password = utils.encryptAES(newPwd, salt);
-      await userMongoSink.update({uuid}, { password, salt })
-        .then(result => {
+      await mongoSink.update({ uuid }, { password, salt }, true, 'userInfo')
+        .then(async result => {
           logger.info("resetPassword userMongoSink update result.result", result.result);
           if (result.result.ok === 1 && result.result.nModified === 1) {
-            const token = utils.refreshToken(uuid);
-            const obj = Object.assign({}, { token, result: "reset_success" });
+            const newToken = await utils.refreshToken(uuid, token);
+            const obj = Object.assign({}, { token: newToken, result: "reset_success" });
             logger.info("resetPassword success");
             return utils.writeResponse(res, obj);
           } else {
@@ -189,5 +197,3 @@ async function resetPassword(req, res) {
     return utils.reportError(req, res, err);
   }
 }
-
-export default router;

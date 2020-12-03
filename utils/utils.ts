@@ -2,70 +2,23 @@ import * as jwt from 'jsonwebtoken';
 import * as crypto from 'crypto'
 import CONF from '../config'
 import logger from './logger'
+import { setCacheValue, expireCacheValue, delCacheValue } from "../services/redis"
 
 const _algorithm = 'aes-256-cbc';
 const _iv = '66666666666666666666666666666666';
 const ivBuffer = Buffer.from(_iv, 'hex');
 
 const utils = {
-  getIp: (req: any, str: string) => {
+  getIp: (req: any, str: string | null) => {
     // const userInfo = { ...req.query, ...req.body };
     let ip = req.headers['x-forwarded-for'] || req.ip || req.connection.remoteAddress || req.socket.remoteAddress || '';
     if (ip.split(',').length > 0) {
       ip = ip.split(',')[0];
     }
-    logger.info(` ${str}的访问者ip: `, ip);
+    if (str) {
+      logger.info(`${str}的访问者ip: `, ip);
+    }
     return ip;
-  },
-
-  jwtVerify: (token: string | undefined, res: any, cb: (a) => void) => {
-    jwt.verify(token, CONF.TOKEN_ENCRYPT_KEY, (err, decoded) => {
-      if (err) {
-        logger.error("jwt.verify  err", err.stack || err.toString());
-        //解析token是否过期 和是否是正确的token,若时间长无操作而过期则给出提示
-        if (err.name === "TokenExpiredError" || err.message === "jwt expired" || err.message === "jwt malformed" || !token) {
-          const wrapper = JSON.stringify({
-            status: 'FAILURE',
-            result: {
-              errCode: 401,
-              errText: 'token_expired'
-            }
-          });
-          let tmpBuf: any = Buffer.from(wrapper);
-          const headers = {
-            'content-length': tmpBuf.length,
-            'content-type': 'application/json'
-          };
-          res.writeHead(401, headers);
-          res.write(tmpBuf);
-          res.end();
-          tmpBuf = null;
-          return;
-        } else {
-          const wrapper = JSON.stringify({
-            status: 'FAILURE',
-            result: {
-              errCode: 500,
-              errText: err.stack || err.toString()
-            }
-          });
-          let tmpBuf: any = Buffer.from(wrapper);
-          const headers = {
-            'content-length': tmpBuf.length,
-            'content-type': 'application/json'
-          };
-          res.writeHead(401, headers);
-          res.write(tmpBuf);
-          res.end();
-          tmpBuf = null;
-          return;
-        }
-      } else {
-        if (cb) {
-          cb(decoded);
-        }
-      }
-    });
   },
 
   writeResponse: (res: any, data: any) => {
@@ -98,20 +51,12 @@ const utils = {
   reportError: (req, res, err) => {
     try {
       logger.error("reportError url", req.originalUrl, 'err', err);
-      if (err) {
-        if (Object.prototype.toString.call(err) === '[object Object]') {
-          err = JSON.stringify(err);
-        } else {
-          err = err.stack || err.toString();
-        }
-      } else {
-        err = "net error";
-      }
+      // err = "系统错误，请联系管理员";
       const wrapper = JSON.stringify({
         status: 'FAILURE',
         result: {
           errCode: 500,
-          err
+          errText: err
         }
       });
       let tmpBuf: any = Buffer.from(wrapper);
@@ -132,7 +77,7 @@ const utils = {
 
   reportInvokeError: (req, res, errText: string) => {
     try {
-      logger.error("reportInvokeError url", req.originalUrl, 'errText', errText);
+      logger.warn("reportInvokeError url", req.originalUrl, 'errText', errText);
       const wrapper = JSON.stringify({
         status: 'FAILURE',
         result: {
@@ -214,16 +159,22 @@ const utils = {
     return str;
   },
 
-  refreshToken: (uuid: string) => {
-    const token = jwt.sign({
+  refreshToken: async (uuid: string, token: string) => {
+    const accessToken = jwt.sign({
       // eslint-disable-next-line camelcase
       user_id: 1, // user_id
       uuid // user_name
     }, CONF.TOKEN_ENCRYPT_KEY, { // 秘钥
       expiresIn: CONF.TOKEN_EXPIRED_TIME // 过期时间
     });
+    const cacheKey = `${CONF.TOKEN_FOR_CACHE}: ${accessToken}`
+    await setCacheValue(cacheKey, "exist")
+    expireCacheValue(cacheKey, CONF.TOKEN_EXPIRED_TIME)
+    if (token) {
+      delCacheValue(`${CONF.TOKEN_FOR_CACHE}: ${token}`)
+    }
     return {
-      access_token: token,
+      access_token: accessToken,
       expires_in: CONF.TOKEN_EXPIRED_TIME,
       expires_time: Date.now() + 1800 * 1000
     }
@@ -245,18 +196,21 @@ const utils = {
     }
   },
 
-  dealWithLoginData: (record) => {
+  dealWithLoginData: async (record, token: string) => {
     const username = record.username;
-    const token = utils.refreshToken(record.uuid);
+    const newToken = await utils.refreshToken(record.uuid, token);
     const data = {
-      token,
+      token: newToken,
       username,
     };
     return data
   },
 
-  format: (fmt: string) => {
-    const self = new Date()
+  formatDate: (fmt: string, timestamp?: number) => {
+    let self = new Date()
+    if (timestamp) {
+      self = new Date(timestamp)
+    }
     const o = {
       "M+": self.getMonth() + 1, //月份
       "d+": self.getDate(), //日
@@ -280,8 +234,21 @@ const utils = {
       }
     }
     return fmt;
-  }
+  },
 
+  checkDataType: (data: string, type: string) => {
+    return Object.prototype.toString.call(data) === `[object ${type}]`
+  },
+
+  checkDbCondition: ({condition, collectionName}) => {
+    if (Object.prototype.toString.call(condition) !== '[object Object]') {
+      return "param must be an object";
+    } else if (!collectionName) {
+      return "collectionName must be valid string"
+    } else {
+      return ""
+    }
+  }
 
 };
 
