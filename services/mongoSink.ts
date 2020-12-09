@@ -46,7 +46,7 @@ function MongoSink() {
             }
           }
         }
-        logger.info('mongodb服务启动成功')
+        logger.info('mongodb => ready')
       }
     });
   });

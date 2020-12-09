@@ -1,6 +1,6 @@
 {
   "name": "typescript-express-templates",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "private": true,
   "devDependencies": {
     "@shuyun-ep-team/eslint-config": "^1.3.2",
@@ -26,7 +26,6 @@
     "body-parser": "^1.18.3",
     "express": "^4.16.4",
     "jsonwebtoken": "^8.4.0",
-    "lodash": "^4.17.15",
     "mongodb": "^3.1.10",
     "redis": "^2.8.0",
     "ts-node": "^9.0.0",

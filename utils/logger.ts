@@ -17,7 +17,7 @@ checkFileExist(path.join(__dirname, "../logs/WARN.log"))
 checkFileExist(path.join(__dirname, "../logs/ERROR.log"))
 
 const logger1 = new Logger({
-  logFileSize: 1024 * 1024 * 10,
+  logFileSize: 1024 * 1024 * 100,
   logFilePath: path.join(__dirname, "../logs/main.log"),
   dataTypeWarn: true,
   productionModel: false,
@@ -26,7 +26,7 @@ const logger1 = new Logger({
   folder: "logs",
 });
 const logger2 = new Logger({
-  logFileSize: 1024 * 1024 * 5,
+  logFileSize: 1024 * 1024 * 50,
   logFilePath: {
     info: path.join(__dirname, "../logs/INFO.log"),
     warn: path.join(__dirname, "../logs/WARN.log"),

@@ -47,7 +47,7 @@ app.use(
   express.urlencoded({
     extended: false,
   })
-); //这个是和get有关系的
+);
 let i = 0; //统计服务器的的访问次数
 //设置允许跨域访问该服务.
 app.all("*", function (req, res, next) {
@@ -55,7 +55,7 @@ app.all("*", function (req, res, next) {
   if (req.url === "/assets/favicon.ico" || req.url === "/favicon.ico") {
     return res.end();
   }
-  logger.info(` server  收到客户端的请求数量`, req.url, req.method, ++i);
+  logger.info(` server  收到客户端的请求数量`, req.url, req.method, ++i, utils.getIp(req, ""));
   res.header("Access-Control-Allow-Origin", "*");
   //Access-Control-Allow-Headers ,可根据浏览器的F12查看,把对应的粘贴在这里就行
   res.header(
@@ -65,7 +65,6 @@ app.all("*", function (req, res, next) {
   res.header("Access-Control-Allow-Methods", "*");
   res.header("Content-Type", "application/json;charset=utf-8");
   res.header("Access-Control-Expose-Headers", "Authorization");
-  utils.getIp(req, req.url);
   next()
 });
 
@@ -103,6 +102,12 @@ app.get("/heart_beat", heartBeat);
 
 // route
 routers(app);
+
+//handle 404
+app.use(function (req, res) {
+  logger.info("404 not found, req.url", req.url)
+  return res.status(404).send('404: Not Found');
+})
 
 function heartBeat(_req, res) {
   logger.info("heartBeat success", utils.formatDate("yyyy-MM-dd hh:mm:ss"));

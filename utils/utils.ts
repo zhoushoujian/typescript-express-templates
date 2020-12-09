@@ -56,7 +56,7 @@ const utils = {
         status: 'FAILURE',
         result: {
           errCode: 500,
-          errText: err
+          errText: err.stack || err.toString()
         }
       });
       let tmpBuf: any = Buffer.from(wrapper);

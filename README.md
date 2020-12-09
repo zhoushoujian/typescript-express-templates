@@ -1,8 +1,21 @@
 # SERVER API
 
+```高度可定制的express项目空壳```
+
 ## Framework
 
 nodejs + express + mongodb + redis + jwt + ts
+
+## Install
+
+```shell
+npm install
+npm run db
+npm run redis
+npm run start
+npm run build
+```
+
 
 ## Implement
 

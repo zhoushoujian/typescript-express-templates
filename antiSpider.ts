@@ -1,6 +1,6 @@
 import utils from "./utils/utils";
 import CONF from "./config";
-import redisClient from "./utils/redis";
+import redisClient from "./services/redis";
 import logger from "./utils/logger";
 
 const antiSpider = function (req, res, next) {
