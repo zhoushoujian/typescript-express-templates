@@ -16,7 +16,6 @@ npm run start
 npm run build
 ```
 
-
 ## Implement
 
 1. 反爬虫
@@ -42,3 +41,11 @@ npm run build
 11. 封装mongodb和redis的操作方法
 
 12. 其他细节
+
+## 关联链接
+
+[快速打包web页面到移动端app](https://github.com/zhoushoujian/cordova-template)  
+
+[快速打包web页面到电脑应用程序](https://github.com/zhoushoujian/electron-template)  
+
+[React + Redux + typescript项目模板](https://github.com/zhoushoujian/typescript-react-templates)  
