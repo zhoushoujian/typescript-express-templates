@@ -7,11 +7,21 @@ import CONF from "../config"
 import { getCacheValue, setCacheValue, delCacheValue, expireCacheValue } from "../services/redis"
 
 const loginErrorTimesTip = (cacheInfo) => {
-  if (CONF.LOGIN_ERROR_TIMES - cacheInfo.times - 1) {
+  if ((CONF.LOGIN_ERROR_TIMES - cacheInfo.times - 1) > 0) {
     return `还剩下${CONF.LOGIN_ERROR_TIMES - cacheInfo.times - 1}次机会`
   } else {
     return '账户已锁定，请稍候再试'
   }
+}
+
+const setLoginErrorInfoCache = async (cacheKey, username, times, req, res, cacheInfo) => {
+  await setCacheValue(cacheKey, { username, times })
+  await expireCacheValue(cacheKey, CONF.EXPIRE_LOGIN_TIME)
+  return utils.reportInvokeError(
+    req, 
+    res, 
+    (cacheInfo && cacheInfo.times > 2) ? `用户名或密码不正确，${loginErrorTimesTip(cacheInfo)}` : "用户名或密码不正确"
+  );
 }
 
 export async function loginVerify(req, res) {
@@ -24,37 +34,19 @@ export async function loginVerify(req, res) {
     const result = await mongoSink.find({ username }, {}, 'userInfo');
     if (!result.length) {
       logger.warn("login_verify  用户名错误！ username", username);
-      await setCacheValue(cacheKey, { username, times })
-      await expireCacheValue(cacheKey, CONF.EXPIRE_LOGIN_TIME)  //按秒计
-      return utils.reportInvokeError(
-        req, 
-        res, 
-        (cacheInfo && cacheInfo.times > 2) ? `用户名或密码不正确，${loginErrorTimesTip(cacheInfo)}` : "用户名或密码不正确"
-      );
+      return setLoginErrorInfoCache(cacheKey, username, times, req, res, cacheInfo)
     }
     const record = result[0];
     const dbPassword = record.password;
     const salt = record.salt;
     if (!salt || !dbPassword) {
       logger.warn("login_verify no db_password salt");
-      await setCacheValue(cacheKey, { username, times })
-      await expireCacheValue(cacheKey, CONF.EXPIRE_LOGIN_TIME)
-      return utils.reportInvokeError(
-        req, 
-        res, 
-        (cacheInfo && cacheInfo.times > 2) ? `用户名或密码不正确，${loginErrorTimesTip(cacheInfo)}` : "用户名或密码不正确"
-      );
+      return setLoginErrorInfoCache(cacheKey, username, times, req, res, cacheInfo)
     }
     const password = utils.encryptAES(pwd, salt);
     if (password !== dbPassword) {
       logger.warn("login_verify  密码错误！username", username);
-      await setCacheValue(cacheKey, { username, times })
-      await expireCacheValue(cacheKey, CONF.EXPIRE_LOGIN_TIME)
-      return utils.reportInvokeError(
-        req, 
-        res, 
-        (cacheInfo && cacheInfo.times > 2) ? `用户名或密码不正确，${loginErrorTimesTip(cacheInfo)}` : "用户名或密码不正确"
-      );
+      return setLoginErrorInfoCache(cacheKey, username, times, req, res, cacheInfo)
     } else {
       delCacheValue(cacheKey)
       const sendData = await utils.dealWithLoginData(record, "")

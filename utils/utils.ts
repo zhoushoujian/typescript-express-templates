@@ -78,6 +78,10 @@ const utils = {
   reportInvokeError: (req, res, errText: string) => {
     try {
       logger.warn("reportInvokeError url", req.originalUrl, 'errText', errText);
+      if (typeof errText !== "string") {
+        logger.warn("reportInvokeError errText is not string")
+        return utils.reportError(req, res, new Error("errText is not string"))
+      }
       const wrapper = JSON.stringify({
         status: 'FAILURE',
         result: {
