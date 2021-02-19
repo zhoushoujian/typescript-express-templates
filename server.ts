@@ -104,12 +104,12 @@ app.get("/heart_beat", heartBeat);
 // route
 routers(app);
 
-function heartBeat(_req, res) {
+function heartBeat(req, res) {
   logger.info("heartBeat success", utils.formatDate("yyyy-MM-dd hh:mm:ss"));
   const responseObj = {
     date: utils.formatDate("yyyy-MM-dd hh:mm:ss"),
   };
-  return utils.writeResponse(res, responseObj);
+  return utils.writeResponse(req, res, responseObj);
 }
 
 // http监听8888端口

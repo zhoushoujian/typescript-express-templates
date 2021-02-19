@@ -21,16 +21,16 @@ const utils = {
     return ip;
   },
 
-  writeResponse: (res: any, data: any) => {
+  writeResponse: (req, res: any, data: any) => {
     if (res) {
       try {
         if (Object.prototype.toString.call(data) !== "[object Object]") {
           logger.error("response data can't be a string", data);
-          res.status(500).end();
+          return utils.reportError(req, res, new Error("response必须是一个对象"))
         }
         const wrapper = JSON.stringify({
           status: 'SUCCESS',
-          result: data
+          result: {...req.query, ...req.body, ...data}
         });
         let tmpBuf: any = Buffer.from(wrapper);
         const headers = {};
@@ -43,7 +43,7 @@ const utils = {
       } catch (e) {
         // Don't leave the client handing
         logger.error("writeResponse e", e.stack || e.toString());
-        res.status(500).end(e.stack || e.toString());
+        return utils.reportError(req, res, e)
       }
     }
   },
