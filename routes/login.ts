@@ -50,7 +50,7 @@ export async function loginVerify(req, res) {
     } else {
       delCacheValue(cacheKey)
       const sendData = await utils.dealWithLoginData(record, "")
-      return utils.writeResponse(res, sendData);
+      return utils.writeResponse(req, res, sendData);
     }
   } catch (err) {
     logger.error("loginVerify err", err.stack || err.toString());
@@ -72,7 +72,7 @@ export function tokenLogin(req, res) {
           const record = result[0];
           if (record) {
             const sendData = await utils.dealWithLoginData(record, token)
-            return utils.writeResponse(res, sendData);
+            return utils.writeResponse(req, res, sendData);
           } else {
             logger.warn("tokenLogin uuid", uuid);
             return utils.reportInvokeError(req, res, "没有这个用户");
@@ -122,7 +122,7 @@ export async function registerVerify(req, res) {
                 response: "success",
                 password: pwd
               }
-              return utils.writeResponse(res, responseObj);
+              return utils.writeResponse(req, res, responseObj);
             })
         }
       })
@@ -140,7 +140,7 @@ export function refreshTokenFunc(req, res) {
       logger.info("refreshTokenFunc uuid", uuid)
       const responseObj = { token: {} };
       responseObj.token = await utils.refreshToken(uuid, token);
-      return utils.writeResponse(res, responseObj);
+      return utils.writeResponse(req, res, responseObj);
     })
   } catch (err) {
     logger.error("refreshTokenFunc err", err);
@@ -177,7 +177,7 @@ export async function resetPassword(req, res) {
             const newToken = await utils.refreshToken(uuid, token);
             const obj = Object.assign({}, { token: newToken, result: "reset_success" });
             logger.info("resetPassword success");
-            return utils.writeResponse(res, obj);
+            return utils.writeResponse(req, res, obj);
           } else {
             logger.error('resetPassword token userMongoSink.update error, result', result);
             return utils.reportError(req, res, result);

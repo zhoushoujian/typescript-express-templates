@@ -106,15 +106,22 @@ routers(app);
 //handle 404
 app.use(function (req, res) {
   logger.info("404 not found, req.url", req.url)
-  return res.status(404).send('404: Not Found');
+  const response = {
+    status: 'FAILURE',
+    result: {
+      errCode: 404,
+      errText: '404: Not Found'
+    }
+  }
+  return res.status(404).send(JSON.stringify(response));
 })
 
-function heartBeat(_req, res) {
+function heartBeat(req, res) {
   logger.info("heartBeat success", utils.formatDate("yyyy-MM-dd hh:mm:ss"));
   const responseObj = {
     date: utils.formatDate("yyyy-MM-dd hh:mm:ss"),
   };
-  return utils.writeResponse(res, responseObj);
+  return utils.writeResponse(req, res, responseObj);
 }
 
 // http监听8888端口
