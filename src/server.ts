@@ -23,8 +23,8 @@ checkDependenceVersion({
   const app = express();
   const httpServer = http.createServer(app);
 
-  if (!fs.existsSync(path.join(__dirname, './logs'))) {
-    fs.mkdirSync(path.join(__dirname, './logs'));
+  if (!fs.existsSync(path.join(__dirname, '../logs'))) {
+    fs.mkdirSync(path.join(__dirname, '../logs'));
   }
 
   //获取ip地址
