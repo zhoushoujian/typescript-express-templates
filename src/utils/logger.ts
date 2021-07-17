@@ -1,36 +1,36 @@
-import * as fs from 'fs'
-import * as path from 'path'
-import * as Logger from "beauty-logger"
+import * as fs from 'fs';
+import * as path from 'path';
+import * as Logger from 'beauty-logger';
 
 function checkFileExist(filePath) {
   if (!fs.existsSync(filePath)) {
-    fs.appendFileSync(filePath, "");
+    fs.appendFileSync(filePath, '');
   }
 }
 
-if (!fs.existsSync(path.join(__dirname, "../logs"))) {
-  fs.mkdirSync(path.join(__dirname, "../logs"));
+if (!fs.existsSync(path.join(__dirname, '../logs'))) {
+  fs.mkdirSync(path.join(__dirname, '../logs'));
 }
-checkFileExist(path.join(__dirname, "../logs/main.log"))
-checkFileExist(path.join(__dirname, "../logs/INFO.log"))
-checkFileExist(path.join(__dirname, "../logs/WARN.log"))
-checkFileExist(path.join(__dirname, "../logs/ERROR.log"))
+checkFileExist(path.join(__dirname, '../logs/main.log'));
+checkFileExist(path.join(__dirname, '../logs/INFO.log'));
+checkFileExist(path.join(__dirname, '../logs/WARN.log'));
+checkFileExist(path.join(__dirname, '../logs/ERROR.log'));
 
 const logger1 = new Logger({
   logFileSize: 1024 * 1024 * 100,
-  logFilePath: path.join(__dirname, "../logs/main.log"),
+  logFilePath: path.join(__dirname, '../logs/main.log'),
   dataTypeWarn: true,
   productionModel: false,
   enableMultipleLogFile: false,
   enableParallelPrint: true,
-  folder: "logs",
+  folder: 'logs',
 });
 const logger2 = new Logger({
   logFileSize: 1024 * 1024 * 50,
   logFilePath: {
-    info: path.join(__dirname, "../logs/INFO.log"),
-    warn: path.join(__dirname, "../logs/WARN.log"),
-    error: path.join(__dirname, "../logs/ERROR.log"),
+    info: path.join(__dirname, '../logs/INFO.log'),
+    warn: path.join(__dirname, '../logs/WARN.log'),
+    error: path.join(__dirname, '../logs/ERROR.log'),
   },
   dataTypeWarn: true,
   productionModel: true,
