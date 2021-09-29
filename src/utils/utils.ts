@@ -1,8 +1,10 @@
 import * as jwt from 'jsonwebtoken';
 import * as crypto from 'crypto';
+import * as express from 'express';
 import CONF from '../config';
 import logger from './logger';
 import { setCacheValue, expireCacheValue, delCacheValue } from '../services/redis';
+import { IRequest } from '../@types/common';
 
 const _algorithm = 'aes-256-cbc';
 const _iv = '66666666666666666666666666666666';
@@ -21,7 +23,7 @@ const utils = {
     return ip;
   },
 
-  writeResponse: (req, res: any, data: any) => {
+  writeResponse: (req: IRequest, res: express.Response, data: any) => {
     if (res) {
       try {
         if (Object.prototype.toString.call(data) !== '[object Object]') {
@@ -30,17 +32,22 @@ const utils = {
         }
         const wrapper = JSON.stringify({
           status: 'SUCCESS',
-          result: { ...req.query, ...req.body, ...data },
+          result: data,
+          request: {
+            ...req.query,
+            ...req.body,
+          },
+          duration: Date.now() - req.now,
         });
         let tmpBuf: any = Buffer.from(wrapper);
-        const headers = {};
+        const headers = {} as any;
         headers['content-length'] = tmpBuf.length;
         headers['content-type'] = 'application/json';
         res.writeHead(200, headers);
         res.write(tmpBuf);
         res.end();
         tmpBuf = null;
-      } catch (e) {
+      } catch (e: any) {
         // Don't leave the client handing
         logger.error('writeResponse e', e.stack || e.toString());
         return utils.reportError(req, res, e);
@@ -48,7 +55,7 @@ const utils = {
     }
   },
 
-  reportError: (req, res, err) => {
+  reportError: (req: IRequest, res: express.Response, err: Error) => {
     try {
       logger.error('reportError url', req.originalUrl, 'err', err);
       // err = "系统错误，请联系管理员";
@@ -57,6 +64,11 @@ const utils = {
         result: {
           errCode: 500,
           errText: err.stack || err.toString(),
+          request: {
+            ...req.query,
+            ...req.body,
+          },
+          duration: Date.now() - req.now,
         },
       });
       let tmpBuf: any = Buffer.from(wrapper);
@@ -68,14 +80,14 @@ const utils = {
       res.write(tmpBuf);
       res.end();
       tmpBuf = null;
-    } catch (e) {
+    } catch (e: any) {
       // Don't leave client hanging
       res.status(500).end();
       logger.error('reportError e', e.stack || e.toString());
     }
   },
 
-  reportInvokeError: (req, res, errText: string) => {
+  reportInvokeError: (req: IRequest, res: express.Response, errText: string) => {
     try {
       logger.warn('reportInvokeError url', req.originalUrl, 'errText', errText);
       if (typeof errText !== 'string') {
@@ -88,6 +100,11 @@ const utils = {
           errCode: 400,
           errText,
         },
+        request: {
+          ...req.query,
+          ...req.body,
+        },
+        duration: Date.now() - req.now,
       });
       let tmpBuf: any = Buffer.from(wrapper);
       const headers = {
@@ -98,7 +115,7 @@ const utils = {
       res.write(tmpBuf);
       res.end();
       tmpBuf = null;
-    } catch (e) {
+    } catch (e: any) {
       res.status(500).end();
       logger.error('reportInvokeError e', e.stack || e.toString());
     }
@@ -190,8 +207,8 @@ const utils = {
     ];
     for (let i = 0; i < num; i++) {
       randomStr = template[Math.floor(Math.random() * 36)];
-      if (/[a-z]/g.test(randomStr)) {
-        if (Math.random() * 2 < 1) {
+      if (/[a-z]/g.test(String(randomStr))) {
+        if (Math.random() * 2 < 1 && typeof randomStr === 'string') {
           randomStr = randomStr.toUpperCase();
         }
       }
@@ -243,7 +260,7 @@ const utils = {
     }
   },
 
-  dealWithLoginData: async (record, token: string) => {
+  dealWithLoginData: async (record: any, token: string) => {
     const username = record.username;
     const newToken = await utils.refreshToken(record.uuid, token);
     const data = {
@@ -272,6 +289,7 @@ const utils = {
     }
     for (const k in o) {
       if (new RegExp('(' + k + ')').test(fmt)) {
+        //@ts-ignore
         fmt = fmt.replace(RegExp.$1, RegExp.$1.length === 1 ? o[k] : ('00' + o[k]).substr(('' + o[k]).length));
       }
     }
@@ -282,7 +300,7 @@ const utils = {
     return Object.prototype.toString.call(data) === `[object ${type}]`;
   },
 
-  checkDbCondition: ({ condition, collectionName }) => {
+  checkDbCondition: ({ condition, collectionName }: { condition: any; collectionName: string }) => {
     if (Object.prototype.toString.call(condition) !== '[object Object]') {
       return 'param must be an object';
     } else if (!collectionName) {

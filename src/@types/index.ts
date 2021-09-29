@@ -4,4 +4,6 @@ declare namespace NodeJS {
   }
 }
 
-// declare module 'emailjs';
+declare module '@shuyun-ep-team/specified-package-version-check';
+
+declare module 'beauty-logger';

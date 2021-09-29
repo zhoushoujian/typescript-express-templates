@@ -1,6 +1,7 @@
 import * as express from 'express';
 import { loginVerify, tokenLogin, registerVerify, refreshTokenFunc, resetPassword } from './login';
 import { checkRequestParam, checkLoginErrorTimes } from '../utils/middleware';
+import { IRequest } from '../@types/common';
 
 // eslint-disable-next-line new-cap
 const router = express.Router();
@@ -17,6 +18,7 @@ router.post('/refresh_token', refreshTokenFunc);
 router.put('/reset_password', checkRequestParam('post', ['oldPwd', 'newPwd'], '原密码或新密码不能为空'), resetPassword);
 
 // 路由入口
-const index = app => app.use('/', (req, res, next) => router(req, res, next));
+const index = (app: express.Application) =>
+  app.use('/', (req: IRequest, res: express.Response, next: express.NextFunction) => router(req, res, next));
 
 export default index;

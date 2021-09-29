@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as Logger from 'beauty-logger';
 
-function checkFileExist(filePath) {
+function checkFileExist(filePath: string) {
   if (!fs.existsSync(filePath)) {
     fs.appendFileSync(filePath, '');
   }
@@ -38,19 +38,19 @@ const logger2 = new Logger({
 });
 
 const logger = {
-  debug: (...args) => {
+  debug: (...args: any) => {
     logger1.debug(...args);
     logger2.debug(...args);
   },
-  info: (...args) => {
+  info: (...args: any) => {
     logger1.info(...args);
     logger2.info(...args);
   },
-  warn: (...args) => {
+  warn: (...args: any) => {
     logger1.warn(...args);
     logger2.warn(...args);
   },
-  error: (...args) => {
+  error: (...args: any) => {
     logger1.error(...args);
     logger2.error(...args);
   },

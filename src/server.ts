@@ -14,11 +14,14 @@ import logger from './utils/logger';
 import { jwtVerify, tokenExpiredFunc } from './utils/middleware';
 import routers from './routes';
 import { getCacheValue, setCacheValue } from './services/redis';
+import { IRequest } from './@types/common';
 
 checkDependenceVersion({
   dependenceArr: ['@shuyun-ep-team/eslint-config', '@shuyun-ep-team/specified-package-version-check', 'beauty-logger'],
   ignoreCheck: CONF.IS_PRODUCTION,
   onlyWarn: CONF.IS_PRODUCTION,
+  useDepCheck: true,
+  autoFixOutdateDep: true,
 }).then(() => {
   const app = express();
   const httpServer = http.createServer(app);
@@ -54,8 +57,9 @@ checkDependenceVersion({
   );
   let i = 0; //统计服务器的的访问次数
   //设置允许跨域访问该服务.
-  app.all('*', async function (req, res, next) {
-    (req as any).id = uuid.v4();
+  app.all('*', async function (req: IRequest, res: express.Response, next: express.NextFunction) {
+    req.id = uuid.v4();
+    req.now = Date.now();
     if (req.url === '/assets/favicon.ico' || req.url === '/favicon.ico') {
       return res.end();
     }
@@ -78,14 +82,14 @@ checkDependenceVersion({
     next();
   });
 
-  app.use(function (req, res, next) {
+  app.use(function (req: IRequest, res: express.Response, next: express.NextFunction) {
     req.method === 'OPTIONS' ? res.status(204).end() : next();
   });
 
   // anti spider
   app.use(antiSpider);
 
-  app.all('*', async function (req, res, next) {
+  app.all('*', async function (req: IRequest, res: express.Response, next: express.NextFunction) {
     const reqUrls = ['/login_verify', '/', '/heart_beat'];
     if (!reqUrls.includes(req.url)) {
       const token = req.headers.authorization || '';
@@ -120,7 +124,7 @@ checkDependenceVersion({
   routers(app);
 
   //handle 404
-  app.use(function (req, res) {
+  app.use(function (req: IRequest, res: express.Response) {
     logger.info('404 not found, req.url', req.url);
     const response = {
       status: 'FAILURE',
@@ -132,7 +136,7 @@ checkDependenceVersion({
     return res.status(404).send(JSON.stringify(response));
   });
 
-  async function heartBeat(req, res) {
+  async function heartBeat(req: IRequest, res: express.Response) {
     logger.info('heartBeat success', utils.formatDate('yyyy-MM-dd hh:mm:ss'));
     const count = await getCacheValue('visitCount');
     const responseObj = {
@@ -152,11 +156,11 @@ checkDependenceVersion({
     process.title = `主服务${address}启动成功,正在监听${CONF.APP_PORT}端口`;
   });
 
-  process.on('uncaughtException', err => {
-    logger.error('uncaughtException child process', err.stack || err.toString());
+  process.on('uncaughtException', (error: Error) => {
+    logger.error('uncaughtException child process', error.stack);
   });
 
-  process.on('unhandledRejection', error => {
-    logger.error('unhandledRejection child process', error);
+  process.on('unhandledRejection', (error: Error) => {
+    logger.error('unhandledRejection child process', error.stack);
   });
 });
