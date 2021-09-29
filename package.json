@@ -1,6 +1,6 @@
 {
   "name": "typescript-express-templates",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "scripts": {
     "checkcode": "eslint -c .eslintrc.js \"./src/**/*.ts\"",
     "dev": "ts-node-dev ./src/server.ts",
