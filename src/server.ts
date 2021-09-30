@@ -7,16 +7,16 @@ import * as uuid from 'uuid';
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
 import * as checkDependenceVersion from '@shuyun-ep-team/specified-package-version-check';
-import utils from './utils/utils';
-import antiSpider from './antiSpider';
-import CONF from './config';
-import logger from './utils/logger';
-import { jwtVerify, tokenExpiredFunc } from './utils/middleware';
-import routers from './routes';
-import { getCacheValue, setCacheValue } from './services/redis';
-import { IRequest } from './@types/common';
+import utils from '@/utils/utils';
+import antiSpider from '@/anti-spider';
+import CONF from '@/config';
+import logger from '@/utils/logger';
+import { jwtVerify, tokenExpiredFunc } from '@/utils/middleware';
+import routers from '@/routes';
+import { getCacheValue, setCacheValue } from '@/services/redis';
+import { IRequest } from '@/@types/common';
 
-checkDependenceVersion({
+(checkDependenceVersion as any)({
   dependenceArr: ['@shuyun-ep-team/eslint-config', '@shuyun-ep-team/specified-package-version-check', 'beauty-logger'],
   ignoreCheck: CONF.IS_PRODUCTION,
   onlyWarn: CONF.IS_PRODUCTION,

@@ -16,7 +16,7 @@ checkFileExist(path.join(__dirname, '../../logs/INFO.log'));
 checkFileExist(path.join(__dirname, '../../logs/WARN.log'));
 checkFileExist(path.join(__dirname, '../../logs/ERROR.log'));
 
-const logger1 = new Logger({
+const logger1 = new (Logger as any)({
   logFileSize: 1024 * 1024 * 100,
   logFilePath: path.join(__dirname, '../../logs/main.log'),
   dataTypeWarn: true,
@@ -25,7 +25,8 @@ const logger1 = new Logger({
   enableParallelPrint: true,
   folder: 'logs',
 });
-const logger2 = new Logger({
+
+const logger2 = new (Logger as any)({
   logFileSize: 1024 * 1024 * 50,
   logFilePath: {
     info: path.join(__dirname, '../../logs/INFO.log'),

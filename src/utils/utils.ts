@@ -1,10 +1,10 @@
 import * as jwt from 'jsonwebtoken';
 import * as crypto from 'crypto';
 import * as express from 'express';
-import CONF from '../config';
+import CONF from '@/config';
+import { setCacheValue, expireCacheValue, delCacheValue } from '@/services/redis';
+import { IRequest } from '@/@types/common';
 import logger from './logger';
-import { setCacheValue, expireCacheValue, delCacheValue } from '../services/redis';
-import { IRequest } from '../@types/common';
 
 const _algorithm = 'aes-256-cbc';
 const _iv = '66666666666666666666666666666666';
@@ -32,7 +32,7 @@ const utils = {
         }
         const wrapper = JSON.stringify({
           status: 'SUCCESS',
-          result: data,
+          response: data,
           request: {
             ...req.query,
             ...req.body,
@@ -61,7 +61,7 @@ const utils = {
       // err = "系统错误，请联系管理员";
       const wrapper = JSON.stringify({
         status: 'FAILURE',
-        result: {
+        response: {
           errCode: 500,
           errText: err.stack || err.toString(),
           request: {
@@ -96,7 +96,7 @@ const utils = {
       }
       const wrapper = JSON.stringify({
         status: 'FAILURE',
-        result: {
+        response: {
           errCode: 400,
           errText,
         },

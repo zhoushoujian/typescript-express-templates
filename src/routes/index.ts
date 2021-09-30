@@ -1,7 +1,7 @@
 import * as express from 'express';
+import { checkRequestParam, checkLoginErrorTimes } from '@/utils/middleware';
+import { IRequest } from '@/@types/common';
 import { loginVerify, tokenLogin, registerVerify, refreshTokenFunc, resetPassword } from './login';
-import { checkRequestParam, checkLoginErrorTimes } from '../utils/middleware';
-import { IRequest } from '../@types/common';
 
 // eslint-disable-next-line new-cap
 const router = express.Router();

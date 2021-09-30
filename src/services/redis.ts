@@ -1,5 +1,5 @@
-import CONF from '../config';
-import logger from '../utils/logger';
+import CONF from '@/config';
+import logger from '@/utils/logger';
 
 const redis = require('redis');
 

@@ -1,7 +1,7 @@
 import * as mongodb from 'mongodb';
-import CONF from '../config';
-import logger from '../utils/logger';
-import utils from '../utils/utils';
+import CONF from '@/config';
+import logger from '@/utils/logger';
+import utils from '@/utils/utils';
 
 const MongoClient = mongodb.MongoClient; //加载数据库
 

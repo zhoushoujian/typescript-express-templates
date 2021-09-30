@@ -1,9 +1,9 @@
 import * as express from 'express';
-import utils from './utils/utils';
-import CONF from './config';
-import redisClient from './services/redis';
-import logger from './utils/logger';
-import { IRequest } from './@types/common';
+import utils from '@/utils/utils';
+import CONF from '@/config';
+import redisClient from '@/services/redis';
+import logger from '@/utils/logger';
+import { IRequest } from '@/@types/common';
 
 const antiSpider = function (req: IRequest, res: express.Response, next: express.NextFunction) {
   const ip = utils.getIp(req, req.url);

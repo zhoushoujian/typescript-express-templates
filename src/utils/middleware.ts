@@ -1,10 +1,10 @@
 import * as express from 'express';
 import * as jwt from 'jsonwebtoken';
-import CONF from '../config';
+import CONF from '@/config';
+import { getCacheValue } from '@/services/redis';
+import { IRequest } from '@/@types/common';
 import logger from './logger';
 import utils from './utils';
-import { getCacheValue } from '../services/redis';
-import { IRequest } from '../@types/common';
 
 export const tokenExpiredFunc = (res: express.Response, errCode: number, errText: any) => {
   const wrapper = JSON.stringify({
@@ -84,7 +84,7 @@ export const checkLoginErrorTimes = async (req: IRequest, res: express.Response,
       logger.warn('checkLoginErrorTimes  用户名已锁定！ username', username);
       return utils.reportInvokeError(req, res, '用户名已锁定，请稍候再试');
     }
-  } catch (err) {
+  } catch (err: any) {
     logger.error('searchFieldForDetail err', err);
     return utils.reportError(req, res, err);
   }
