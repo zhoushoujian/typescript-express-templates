@@ -1,5 +1,6 @@
 import * as express from 'express';
 import * as jwt from 'jsonwebtoken';
+import * as Parameter from 'parameter';
 import CONF from '@/config';
 import { getCacheValue } from '@/services/redis';
 import { IRequest } from '@/@types/common';
@@ -49,31 +50,6 @@ export const jwtVerify = (token: string | undefined, res: express.Response, cb: 
   });
 };
 
-export const checkRequestParam = (method: string, params: string[], message: string) => {
-  return (req: IRequest, res: express.Response, next: express.NextFunction) => {
-    let flag = 'flag';
-    const content = method === 'get' || method === 'delete' ? req.query : req.body;
-    if (!Array.isArray(params)) {
-      return utils.reportError(req, res, new Error('params is not an array'));
-    } else {
-      params.some(item => {
-        if (content[item] === undefined) {
-          flag = '';
-          return true;
-        } else {
-          return false;
-        }
-      });
-      if (!flag) {
-        logger.warn('checkRequestParam no flag method, params, message', method, params, message);
-        return utils.reportInvokeError(req, res, message);
-      } else {
-        next();
-      }
-    }
-  };
-};
-
 export const checkLoginErrorTimes = async (req: IRequest, res: express.Response, next: express.NextFunction) => {
   try {
     const { username } = req.body;
@@ -86,6 +62,33 @@ export const checkLoginErrorTimes = async (req: IRequest, res: express.Response,
     }
   } catch (err: any) {
     logger.error('searchFieldForDetail err', err);
+    return utils.reportError(req, res, err);
+  }
+};
+
+export const validParam = (
+  req: IRequest,
+  res: express.Response,
+  next: express.NextFunction,
+  rules: Parameter.ParameterRules,
+) => {
+  try {
+    const parameter = new Parameter();
+
+    if (!rules) {
+      return utils.reportError(req, res, new Error('rules cannot be undefined'));
+    }
+
+    const params = ['GET', 'HEAD', 'DELETE'].includes(req.method.toUpperCase()) ? req.query : req.body;
+    const errors: Parameter.ValidateError[] | void = parameter.validate(rules, params);
+    if (errors && errors.length) {
+      logger.info('validParam errors', errors);
+      return utils.reportInvokeError(req, res, errors.map(item => `${item.field}: ${item.message};`).join('\r\n'));
+    } else {
+      return next();
+    }
+  } catch (err) {
+    logger.error('validParam err', err);
     return utils.reportError(req, res, err);
   }
 };
