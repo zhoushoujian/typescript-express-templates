@@ -75,7 +75,7 @@ MongoSink.prototype.find = function (condition: any, projection: any, collection
         logger.error('dbo.collection  find  err', err);
         return rej(err);
       }
-      res(result || []);
+      return res(result || []);
     });
   }).catch(err => {
     logger.error('MongoSink find err', err.stack || err.toString());
@@ -112,7 +112,7 @@ MongoSink.prototype.findForPagination = function (
           logger.error('dbo.collection find findForPagination  err', err);
           return rej(err);
         }
-        res(result || []);
+        return res(result || []);
       });
   }).catch(err => {
     logger.error('MongoSink findForPagination err', err.stack || err.toString());
@@ -131,7 +131,7 @@ MongoSink.prototype.insertOne = function (insertObj: any, collectionName: string
         logger.error('insertOne  err', err);
         return rej(err);
       }
-      res(result);
+      return res(result);
     });
   }).catch(err => {
     logger.error('MongoSink insertOne err', err.stack || err.toString());
@@ -280,7 +280,7 @@ MongoSink.prototype.count = function (condition: any, collectionName: string) {
         logger.error('dbo.collection count err', err);
         return rej(err);
       }
-      res(result);
+      return res(result);
     });
   }).catch(err => {
     logger.error('MongoSink count err', err.stack || err.toString());
@@ -302,7 +302,7 @@ MongoSink.prototype.remove = function (condition: any, options: any, collectionN
         logger.error('dbo.collection remove err', err);
         return rej(err);
       }
-      res(result);
+      return res(result);
     });
   }).catch(err => {
     logger.error('MongoSink count err', err.stack || err.toString());

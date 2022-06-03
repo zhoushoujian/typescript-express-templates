@@ -38,9 +38,9 @@ export const jwtVerify = (token: string | undefined, res: express.Response, cb: 
         err.message === 'jwt malformed' ||
         !token
       ) {
-        return tokenExpiredFunc(res, 401, 'token_expired');
+        tokenExpiredFunc(res, 401, 'token_expired');
       } else {
-        return tokenExpiredFunc(res, 500, err.stack || err.toString());
+        tokenExpiredFunc(res, 500, err.stack || err.toString());
       }
     } else {
       if (cb) {
@@ -55,7 +55,7 @@ export const checkLoginErrorTimes = async (req: IRequest, res: express.Response,
     const { username } = req.body;
     const cacheInfo: any = await getCacheValue(`${CONF.LOGIN_FOR_CACHE}: ${username}`);
     if (!cacheInfo || cacheInfo.times < CONF.LOGIN_ERROR_TIMES) {
-      next();
+      return next();
     } else {
       logger.warn('checkLoginErrorTimes  用户名已锁定！ username', username);
       return utils.reportInvokeError(req, res, '用户名已锁定，请稍候再试');

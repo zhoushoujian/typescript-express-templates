@@ -12,7 +12,7 @@ const antiSpider = function (req: IRequest, res: express.Response, next: express
     try {
       if (err) {
         logger.error('antiSpider get err', err);
-        throw err;
+        return res.status(500).end(err.stack);
       }
       if (result) {
         const obj = JSON.parse(result);
@@ -41,7 +41,7 @@ const antiSpider = function (req: IRequest, res: express.Response, next: express
               obj.date = Date.now();
               obj.status = 'open';
               redisClient.set(`ip:${ip}`, JSON.stringify(obj));
-              next();
+              return next();
             }
           } else if (obj.times > CONF.ANTI_SPIDER_TIMES) {
             // 正常的用户，访问次数达到100，时间间隔超过一分钟，重新计数
@@ -49,12 +49,12 @@ const antiSpider = function (req: IRequest, res: express.Response, next: express
             obj.date = Date.now();
             obj.status = 'open';
             redisClient.set(`ip:${ip}`, JSON.stringify(obj));
-            next();
+            return next();
           } else {
             // 正常的用户，统计访问次数
             obj.times += 1;
             redisClient.set(`ip:${ip}`, JSON.stringify(obj));
-            next();
+            return next();
           }
         }
       } else {
@@ -65,7 +65,7 @@ const antiSpider = function (req: IRequest, res: express.Response, next: express
           status: 'open',
         };
         redisClient.set(`ip:${ip}`, JSON.stringify(obj));
-        next();
+        return next();
       }
     } catch (err: any) {
       logger.error('antiSpider run err', err.stack);

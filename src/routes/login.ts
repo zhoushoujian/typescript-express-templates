@@ -115,7 +115,7 @@ export async function registerVerify(req: IRequest, res: express.Response) {
     } else if (!/^[\u4e00-\u9fa5_a-zA-Z0-9]+$/.test(username)) {
       return utils.reportInvokeError(req, res, '用户名只能是数字字母下划线或中文');
     }
-    await mongoSink.find({ username }, {}, 'userInfo').then(async (result: any[]) => {
+    return mongoSink.find({ username }, {}, 'userInfo').then(async (result: any[]) => {
       logger.info('registerVerify result.length', result.length);
       if (result.length) {
         logger.warn('register_verify  用户名已存在！');
@@ -129,7 +129,7 @@ export async function registerVerify(req: IRequest, res: express.Response) {
           salt,
           uuid: uuid.v4(),
         };
-        await mongoSink.update({ username }, obj, true, 'userInfo').then(() => {
+        return mongoSink.update({ username }, obj, true, 'userInfo').then(() => {
           logger.info('registerVerify success username, pwd', username, pwd);
           const responseObj = {
             response: 'success',
@@ -183,7 +183,7 @@ export async function resetPassword(req: IRequest, res: express.Response) {
       }
       const salt = Buffer.from(utils.generateString(32), 'utf8').toString('hex');
       const password = utils.encryptAES(newPwd, salt);
-      await mongoSink.update({ uuid }, { password, salt }, true, 'userInfo').then(async (result: any) => {
+      return mongoSink.update({ uuid }, { password, salt }, true, 'userInfo').then(async (result: any) => {
         logger.info('resetPassword userMongoSink update result.result', result.result);
         if (result.result.ok === 1 && result.result.nModified === 1) {
           const newToken = await utils.refreshToken(uuid, token as string);

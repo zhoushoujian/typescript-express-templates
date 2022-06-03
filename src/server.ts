@@ -37,7 +37,6 @@ import { IRequest } from '@/@types/common';
     for (const kk in networks[k]) {
       if (networks[k][kk].family === 'IPv4' && networks[k][kk].address !== '127.0.0.1') {
         address = networks[k][kk].address;
-        return address;
       }
     }
   });
@@ -79,7 +78,7 @@ import { IRequest } from '@/@types/common';
     res.header('Access-Control-Allow-Methods', '*');
     res.header('Content-Type', 'application/json;charset=utf-8');
     res.header('Access-Control-Expose-Headers', 'Authorization');
-    next();
+    return next();
   });
 
   app.use(function (req: IRequest, res: express.Response, next: express.NextFunction) {
@@ -97,7 +96,7 @@ import { IRequest } from '@/@types/common';
       if (!cacheTokenKey) {
         return tokenExpiredFunc(res, 401, 'token已过期');
       }
-      jwtVerify(token, res, async function (decoded) {
+      return jwtVerify(token, res, async function (decoded) {
         logger.info('decoded.uuid', decoded, 'req.url', req.url);
         const now = Math.ceil(Date.now() / 1000);
         //自动刷新token
@@ -112,7 +111,7 @@ import { IRequest } from '@/@types/common';
         next();
       });
     } else {
-      next();
+      return next();
     }
   });
 
@@ -136,12 +135,14 @@ import { IRequest } from '@/@types/common';
     return res.status(404).send(JSON.stringify(response));
   });
 
+  const launchTime = Date.now();
   async function heartBeat(req: IRequest, res: express.Response) {
     logger.info('heartBeat success', utils.formatDate('yyyy-MM-dd hh:mm:ss'));
     const count = await getCacheValue('visitCount');
     const responseObj = {
       date: utils.formatDate('yyyy-MM-dd hh:mm:ss'),
       apiCount: `已响应${count}次请求`,
+      runningTime: utils.countRunningTineFunc(launchTime),
     };
     return utils.writeResponse(req, res, responseObj);
   }

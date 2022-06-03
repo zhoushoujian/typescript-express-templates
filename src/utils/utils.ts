@@ -24,38 +24,37 @@ const utils = {
   },
 
   writeResponse: (req: IRequest, res: express.Response, data: any) => {
-    if (res) {
-      try {
-        if (Object.prototype.toString.call(data) !== '[object Object]') {
-          logger.error("response data can't be a string", data);
-          return utils.reportError(req, res, new Error('response必须是一个对象'));
-        }
-        const wrapper = JSON.stringify({
-          status: 'SUCCESS',
-          response: data,
-          request: {
-            ...req.query,
-            ...req.body,
-          },
-          duration: Date.now() - req.now,
-        });
-        let tmpBuf: any = Buffer.from(wrapper);
-        const headers = {} as any;
-        headers['content-length'] = tmpBuf.length;
-        headers['content-type'] = 'application/json';
-        res.writeHead(200, headers);
-        res.write(tmpBuf);
-        res.end();
-        tmpBuf = null;
-      } catch (e: any) {
-        // Don't leave the client handing
-        logger.error('writeResponse e', e.stack || e.toString());
-        return utils.reportError(req, res, e);
+    try {
+      if (Object.prototype.toString.call(data) !== '[object Object]') {
+        logger.error("response data can't be a string", data);
+        return utils.reportError(req, res, new Error('response必须是一个对象'));
       }
+      const wrapper = JSON.stringify({
+        status: 'SUCCESS',
+        response: data,
+        request: {
+          ...req.query,
+          ...req.body,
+        },
+        duration: Date.now() - req.now,
+      });
+      let tmpBuf: any = Buffer.from(wrapper);
+      const headers = {} as any;
+      headers['content-length'] = tmpBuf.length;
+      headers['content-type'] = 'application/json';
+      res.writeHead(200, headers);
+      res.write(tmpBuf);
+      res.end();
+      tmpBuf = null;
+      return undefined;
+    } catch (e: any) {
+      // Don't leave the client handing
+      logger.error('writeResponse e', e.stack || e.toString());
+      return utils.reportError(req, res, e);
     }
   },
 
-  reportError: (req: IRequest, res: express.Response, err: Error) => {
+  reportError: (req: IRequest, res: express.Response, err: Error | unknown) => {
     try {
       logger.error('reportError url', req.originalUrl, 'err', err);
       // err = "系统错误，请联系管理员";
@@ -63,7 +62,7 @@ const utils = {
         status: 'FAILURE',
         response: {
           errCode: 500,
-          errText: err.stack || err.toString(),
+          errText: (err as Error).stack || (err as Error).toString(),
           request: {
             ...req.query,
             ...req.body,
@@ -115,9 +114,10 @@ const utils = {
       res.write(tmpBuf);
       res.end();
       tmpBuf = null;
+      return undefined;
     } catch (e: any) {
-      res.status(500).end();
       logger.error('reportInvokeError e', e.stack || e.toString());
+      return res.status(500).end();
     }
   },
 
@@ -308,6 +308,45 @@ const utils = {
     } else {
       return '';
     }
+  },
+
+  countRunningTineFunc: (launchTime: number) => {
+    let text = '';
+    const minusValue = Math.ceil((Date.now() - launchTime) / 1000);
+    if (minusValue < 60) {
+      text = `${minusValue}s`;
+    } else if (minusValue < 60 * 60) {
+      text = `${Math.floor(minusValue / 60)}m ${minusValue % 60}s`;
+    } else if (minusValue < 60 * 60 * 24) {
+      const leftValue = minusValue % (60 * 60);
+      text = `${Math.floor(minusValue / 60 / 60)}h ${Math.floor(leftValue / 60)}m ${leftValue % 60}s`;
+    } else if (minusValue < 60 * 60 * 24 * 30) {
+      const leftValue1 = minusValue % (60 * 60 * 24);
+      const leftValue2 = leftValue1 % (60 * 60);
+      text = `${Math.floor(minusValue / 60 / 60 / 24)}d ${Math.floor(leftValue1 / 60 / 60)}h ${Math.floor(
+        leftValue2 / 60,
+      )}m  ${leftValue2 % 60}s`;
+    } else if (minusValue < 60 * 60 * 24 * 30 * 12) {
+      const leftValue1 = minusValue % (60 * 60 * 24 * 30);
+      const leftValue2 = leftValue1 % (60 * 60 * 24);
+      const leftValue3 = leftValue1 % (60 * 60);
+      text = `${Math.floor(minusValue / 60 / 60 / 24 / 30)}M ${Math.floor(leftValue1 / 60 / 60 / 24)}d ${Math.floor(
+        leftValue2 / 60 / 60,
+      )}h ${Math.floor(leftValue3 / 60)}m ${leftValue3 % 60}s`;
+    } else if (minusValue < 60 * 60 * 24 * 30 * 12 * 100) {
+      const leftValue1 = minusValue % (60 * 60 * 24 * 30 * 12);
+      const leftValue2 = leftValue1 % (60 * 60 * 24 * 30);
+      const leftValue3 = leftValue2 % (60 * 60 * 24);
+      const leftValue4 = leftValue2 % (60 * 60);
+      text = `${Math.floor(minusValue / 60 / 60 / 24 / 30 / 12)}Y ${Math.floor(
+        leftValue1 / 60 / 60 / 24 / 30,
+      )}M ${Math.floor(leftValue2 / 60 / 60 / 24)}d ${Math.floor(leftValue3 / 60 / 60)}h ${Math.floor(
+        leftValue4 / 60,
+      )}m ${leftValue4 % 60}s`;
+    } else {
+      text = `${minusValue}s`;
+    }
+    return text;
   },
 };
 
