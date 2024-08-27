@@ -1,14 +1,5 @@
-import * as jwt from 'jsonwebtoken';
-import * as crypto from 'crypto';
 import * as express from 'express';
-import CONF from '@/config';
-import { setCacheValue, expireCacheValue, delCacheValue } from '@/services/redis';
-import { IRequest } from '@/@types/common';
 import logger from './logger';
-
-const _algorithm = 'aes-256-cbc';
-const _iv = '66666666666666666666666666666666';
-const ivBuffer = Buffer.from(_iv, 'hex');
 
 const utils = {
   getIp: (req: any, str: string | null) => {
@@ -23,7 +14,7 @@ const utils = {
     return ip;
   },
 
-  writeResponse: (req: IRequest, res: express.Response, data: any) => {
+  writeResponse: (req: express.Request, res: express.Response, data: any) => {
     try {
       if (Object.prototype.toString.call(data) !== '[object Object]') {
         logger.error("response data can't be a string", data);
@@ -36,7 +27,6 @@ const utils = {
           ...req.query,
           ...req.body,
         },
-        duration: Date.now() - req.now,
       });
       let tmpBuf: any = Buffer.from(wrapper);
       const headers = {} as any;
@@ -54,7 +44,7 @@ const utils = {
     }
   },
 
-  reportError: (req: IRequest, res: express.Response, err: Error | unknown) => {
+  reportError: (req: express.Request, res: express.Response, err: Error | unknown) => {
     try {
       logger.error('reportError url', req.originalUrl, 'err', err);
       // err = "系统错误，请联系管理员";
@@ -67,7 +57,6 @@ const utils = {
             ...req.query,
             ...req.body,
           },
-          duration: Date.now() - req.now,
         },
       });
       let tmpBuf: any = Buffer.from(wrapper);
@@ -86,7 +75,7 @@ const utils = {
     }
   },
 
-  reportInvokeError: (req: IRequest, res: express.Response, errText: string) => {
+  reportInvokeError: (req: express.Request, res: express.Response, errText: string) => {
     try {
       logger.warn('reportInvokeError url', req.originalUrl, 'errText', errText);
       if (typeof errText !== 'string') {
@@ -103,7 +92,6 @@ const utils = {
           ...req.query,
           ...req.body,
         },
-        duration: Date.now() - req.now,
       });
       let tmpBuf: any = Buffer.from(wrapper);
       const headers = {
@@ -120,156 +108,6 @@ const utils = {
       return res.status(500).end();
     }
   },
-
-  encryptAES: (data: Buffer | string, key: Buffer | string) => {
-    let keyBuf: any = null;
-    if (key instanceof Buffer) {
-      keyBuf = key;
-    } else {
-      keyBuf = Buffer.from(key, 'hex');
-    }
-    let dataBuf: any = null;
-    if (data instanceof Buffer) {
-      dataBuf = data;
-    } else {
-      dataBuf = Buffer.from(data, 'utf8');
-    }
-    const cipher = crypto.createCipheriv(_algorithm, keyBuf, ivBuffer);
-    cipher.setAutoPadding(true);
-    let cipherData = cipher.update(dataBuf, undefined, 'base64');
-    cipherData += cipher.final('base64');
-
-    return cipherData;
-  },
-
-  decryptAES: (data: Buffer | string, key: Buffer | string) => {
-    let keyBuf: any = null;
-    if (key instanceof Buffer) {
-      keyBuf = key;
-    } else {
-      keyBuf = Buffer.from(key, 'hex');
-    }
-    let dataBuf: any = null;
-    if (data instanceof Buffer) {
-      dataBuf = data;
-    } else {
-      dataBuf = Buffer.from(data, 'base64');
-    }
-    const decipher = crypto.createDecipheriv(_algorithm, keyBuf, ivBuffer);
-    decipher.setAutoPadding(true);
-    let decipherData = decipher.update(dataBuf, 'binary', 'binary');
-    decipherData += decipher.final('binary');
-    const str = Buffer.from(decipherData, 'binary');
-    return str.toString('utf8');
-  },
-
-  generateString: (num: number) => {
-    let str = '',
-      randomStr;
-    // eslint-disable-next-line comma-spacing
-    const template = [
-      0,
-      1,
-      2,
-      3,
-      4,
-      5,
-      6,
-      7,
-      8,
-      9,
-      'a',
-      'b',
-      'c',
-      'd',
-      'e',
-      'f',
-      'g',
-      'h',
-      'i',
-      'j',
-      'k',
-      'l',
-      'm',
-      'n',
-      'o',
-      'p',
-      'q',
-      'r',
-      's',
-      't',
-      'u',
-      'v',
-      'w',
-      'x',
-      'y',
-      'z',
-    ];
-    for (let i = 0; i < num; i++) {
-      randomStr = template[Math.floor(Math.random() * 36)];
-      if (/[a-z]/g.test(String(randomStr))) {
-        if (Math.random() * 2 < 1 && typeof randomStr === 'string') {
-          randomStr = randomStr.toUpperCase();
-        }
-      }
-      str += randomStr;
-    }
-    logger.info('utils generateString str', str);
-    return str;
-  },
-
-  refreshToken: async (uuid: string, token: string) => {
-    const accessToken = jwt.sign(
-      {
-        // eslint-disable-next-line camelcase
-        user_id: 1, // user_id
-        uuid, // user_name
-      },
-      CONF.TOKEN_ENCRYPT_KEY,
-      {
-        // 秘钥
-        expiresIn: CONF.TOKEN_EXPIRED_TIME, // 过期时间
-      },
-    );
-    const cacheKey = `${CONF.TOKEN_FOR_CACHE}: ${accessToken}`;
-    await setCacheValue(cacheKey, 'exist');
-    expireCacheValue(cacheKey, CONF.TOKEN_EXPIRED_TIME);
-    if (token) {
-      delCacheValue(`${CONF.TOKEN_FOR_CACHE}: ${token}`);
-    }
-    return {
-      access_token: accessToken,
-      expires_in: CONF.TOKEN_EXPIRED_TIME,
-      expires_time: Date.now() + 1800 * 1000,
-    };
-  },
-
-  generateFourNumbers: () => {
-    let verifyCode = String(Math.floor(Math.random() * 10000));
-    if (verifyCode.length !== 4) {
-      verifyCode = utils.generateFourNumbers();
-    }
-    return verifyCode;
-  },
-
-  checkEmail: (email: string) => {
-    if (/^[0-9a-zA-Z_.-]+[@][0-9a-zA-Z_.-]+([.][a-zA-Z]+){1,2}$/g.test(email)) {
-      return true;
-    } else {
-      return false;
-    }
-  },
-
-  dealWithLoginData: async (record: any, token: string) => {
-    const username = record.username;
-    const newToken = await utils.refreshToken(record.uuid, token);
-    const data = {
-      token: newToken,
-      username,
-    };
-    return data;
-  },
-
   formatDate: (fmt: string, timestamp?: number) => {
     let self = new Date();
     if (timestamp) {
@@ -295,21 +133,6 @@ const utils = {
     }
     return fmt;
   },
-
-  checkDataType: (data: string, type: string) => {
-    return Object.prototype.toString.call(data) === `[object ${type}]`;
-  },
-
-  checkDbCondition: ({ condition, collectionName }: { condition: any; collectionName: string }) => {
-    if (Object.prototype.toString.call(condition) !== '[object Object]') {
-      return 'param must be an object';
-    } else if (!collectionName) {
-      return 'collectionName must be valid string';
-    } else {
-      return '';
-    }
-  },
-
   countRunningTineFunc: (launchTime: number) => {
     let text = '';
     const minusValue = Math.ceil((Date.now() - launchTime) / 1000);

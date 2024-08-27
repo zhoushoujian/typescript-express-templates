@@ -5,11 +5,4 @@ export default {
     username: 'string',
     pwd: 'string',
   } as ParameterRules<any>,
-  registerVerify: {
-    username: 'string',
-  } as ParameterRules<any>,
-  resetPassword: {
-    oldPwd: 'string',
-    newPwd: 'string',
-  } as ParameterRules<any>,
 };

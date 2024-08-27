@@ -4,14 +4,12 @@ module.exports = {
     es6: true,
     node: true,
   },
-  extends: ['@shuyun-ep-team/eslint-config'],
+  extends: ['@szhou/eslint-config/base', '@szhou/eslint-config/typescript', '@szhou/eslint-config/prettier'],
   parserOptions: {
     ecmaVersion: 2018,
     sourceType: 'module',
     project: './tsconfig.json',
     createDefaultProgram: true,
   },
-  rules: {
-    'global-require': 'off',
-  },
+  rules: {},
 };
