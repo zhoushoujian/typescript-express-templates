@@ -1,6 +1,5 @@
 import * as express from 'express';
-import * as Parameter from 'parameter';
-import logger from './logger';
+import Parameter from 'parameter';
 import utils from './utils';
 
 export const validParam = (
@@ -19,13 +18,13 @@ export const validParam = (
     const params = ['GET', 'HEAD', 'DELETE'].includes(req.method.toUpperCase()) ? req.query : req.body;
     const errors: Parameter.ValidateError[] | void = parameter.validate(rules, params);
     if (errors && errors.length) {
-      logger.info('validParam errors', errors);
+      console.info('validParam errors', errors);
       return utils.reportInvokeError(req, res, errors.map((item) => `${item.field}: ${item.message};`).join('\r\n'));
     } else {
       return next();
     }
   } catch (err) {
-    logger.error('validParam err', err);
+    console.error('validParam err', err);
     return utils.reportError(req, res, err);
   }
 };

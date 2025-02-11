@@ -1,10 +1,11 @@
 {
   "compilerOptions": {
     /* 基本选项 */
-    "target": "ES2015", // 指定 ECMAScript 目标版本: 'ES3' (default), 'ES5', 'ES6'/'ES2015', 'ES2016', 'ES2017', or 'ESNEXT'
-    "module": "commonjs", // 指定使用模块: 'commonjs', 'amd', 'system', 'umd' or 'es2015'
+    "target": "ESNEXT", // 指定 ECMAScript 目标版本: 'ES3' (default), 'ES5', 'ES6'/'ES2015', 'ES2016', 'ES2017', or 'ESNEXT'
+    "module": "NodeNext", // 指定使用模块: 'commonjs', 'amd', 'system', 'umd' or 'es2015'
     "lib": [
-      "es2021"
+      "ESNEXT",
+      "dom"
     ], // 指定要包含在编译中的库文件
     "allowJs": true, // 允许编译 javascript 文件
     "checkJs": false, // 报告 javascript 文件中的错误
@@ -14,7 +15,7 @@
     "outDir": "./dist", // 指定输出目录
     "rootDir": "./src", // 用来控制输出目录结构 --outDir.
     // "removeComments": true, // 删除编译后的所有的注释
-    "noEmit": false, // 不生成输出文件
+    "noEmit": true, // 不生成输出文件
     "noEmitOnError": true,
     // "importHelpers": true, // 从 tslib 导入辅助工具函数
     "isolatedModules": false, // 将每个文件做为单独的模块 （与 'ts.transpileModule' 类似）.
@@ -30,7 +31,8 @@
     "noImplicitReturns": true, // 并不是所有函数里的代码都有返回值时，抛出错误
     "noFallthroughCasesInSwitch": true, // 报告 switch 语句的 fallthrough 错误。（即，不允许 switch 的 case 语句贯穿）
     /* 模块解析选项 */
-    "moduleResolution": "node", // 选择模块解析策略： 'node' (Node.js) or 'classic' (TypeScript pre-1.6)
+    "moduleResolution": "NodeNext", // 选择模块解析策略： 'node' (Node.js) or 'classic' (TypeScript pre-1.6)
+    "esModuleInterop": true,
     "baseUrl": "./", // 用于解析非相对模块名称的基目录
     "paths": {
       "@/*": [
@@ -51,13 +53,16 @@
     "downlevelIteration": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true
   },
   "include": [
     "./src"
   ],
   "exclude": [
-    "build.ts",
     "./dist",
-  ]
+  ],
+  "ts-node": {
+    "experimentalSpecifierResolution": "node" // 解决 ES Modules 的路径问题
+  },
 }

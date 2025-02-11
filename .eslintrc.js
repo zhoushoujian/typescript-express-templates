@@ -11,5 +11,7 @@ module.exports = {
     project: './tsconfig.json',
     createDefaultProgram: true,
   },
-  rules: {},
+  rules: {
+    "no-console": 0
+  },
 };

@@ -1,5 +1,4 @@
 import * as express from 'express';
-import logger from './logger';
 
 const utils = {
   getIp: (req: any, str: string | null) => {
@@ -9,7 +8,7 @@ const utils = {
       ip = ip.split(',')[0];
     }
     if (str) {
-      logger.info(`${str}的访问者ip: `, ip);
+      console.info(`${str}的访问者ip: `, ip);
     }
     return ip;
   },
@@ -17,7 +16,7 @@ const utils = {
   writeResponse: (req: express.Request, res: express.Response, data: any) => {
     try {
       if (Object.prototype.toString.call(data) !== '[object Object]') {
-        logger.error("response data can't be a string", data);
+        console.error("response data can't be a string", data);
         return utils.reportError(req, res, new Error('response必须是一个对象'));
       }
       const wrapper = JSON.stringify({
@@ -39,14 +38,14 @@ const utils = {
       return undefined;
     } catch (e: any) {
       // Don't leave the client handing
-      logger.error('writeResponse e', e.stack || e.toString());
+      console.error('writeResponse e', e.stack || e.toString());
       return utils.reportError(req, res, e);
     }
   },
 
   reportError: (req: express.Request, res: express.Response, err: Error | unknown) => {
     try {
-      logger.error('reportError url', req.originalUrl, 'err', err);
+      console.error('reportError url', req.originalUrl, 'err', err);
       // err = "系统错误，请联系管理员";
       const wrapper = JSON.stringify({
         status: 'FAILURE',
@@ -71,15 +70,15 @@ const utils = {
     } catch (e: any) {
       // Don't leave client hanging
       res.status(500).end();
-      logger.error('reportError e', e.stack || e.toString());
+      console.error('reportError e', e.stack || e.toString());
     }
   },
 
   reportInvokeError: (req: express.Request, res: express.Response, errText: string) => {
     try {
-      logger.warn('reportInvokeError url', req.originalUrl, 'errText', errText);
+      console.warn('reportInvokeError url', req.originalUrl, 'errText', errText);
       if (typeof errText !== 'string') {
-        logger.warn('reportInvokeError errText is not string');
+        console.warn('reportInvokeError errText is not string');
         return utils.reportError(req, res, new Error('errText is not string'));
       }
       const wrapper = JSON.stringify({
@@ -104,7 +103,7 @@ const utils = {
       tmpBuf = null;
       return undefined;
     } catch (e: any) {
-      logger.error('reportInvokeError e', e.stack || e.toString());
+      console.error('reportInvokeError e', e.stack || e.toString());
       return res.status(500).end();
     }
   },

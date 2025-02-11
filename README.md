@@ -13,7 +13,6 @@ nodejs + express + ts + eslint + husky
 pnpm install
 pnpm start
 # 访问 http://localhost:8888
-pnpm build
 ```
 
 ## 关联链接

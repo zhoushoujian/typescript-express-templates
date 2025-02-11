@@ -1,10 +1,9 @@
 import * as http from 'http';
 import * as os from 'os';
-import * as express from 'express';
+import express from 'express';
 import * as bodyParser from 'body-parser';
 import utils from '@/utils/utils';
 import CONF from '@/config';
-import logger from '@/utils/logger';
 import routers from '@/routes';
 
 const app = express();
@@ -12,10 +11,8 @@ const httpServer = http.createServer(app);
 
 // http监听8888端口
 httpServer.listen(CONF.APP_PORT, () => {
-  logger.info(
-    `服务${address}启动成功,正在监听${CONF.APP_PORT}端口, http${CONF.IS_PRODUCTION ? 's' : ''}://${address}:${
-      CONF.APP_PORT
-    }`,
+  console.info(
+    `服务${address}启动成功,正在监听${CONF.APP_PORT}端口, http${CONF.IS_PRODUCTION ? 's' : ''}://${address}:${CONF.APP_PORT}`,
   );
   process.title = `服务${address}启动成功,正在监听${CONF.APP_PORT}端口`;
 });
@@ -50,7 +47,7 @@ app.all('*', function (req, res, next) {
   if (req.url === '/assets/favicon.ico' || req.url === '/favicon.ico') {
     return res.end();
   }
-  logger.info(` server  收到客户端的请求数量`, req.url, req.method, ++i, utils.getIp(req, ''));
+  console.info(` server  收到客户端的请求数量`, req.url, req.method, ++i, utils.getIp(req, ''));
   res.header('Access-Control-Allow-Origin', '*');
   //Access-Control-Allow-Headers ,可根据浏览器的F12查看,把对应的粘贴在这里就行
   res.header(
@@ -76,7 +73,7 @@ routers(app);
 
 //handle 404
 app.use(function (req: express.Request, res: express.Response) {
-  logger.info('404 not found, req.url', req.url);
+  console.info('404 not found, req.url', req.url);
   const response = {
     status: 'FAILURE',
     result: {
@@ -89,7 +86,7 @@ app.use(function (req: express.Request, res: express.Response) {
 
 const launchTime = Date.now();
 async function heartBeat(req: express.Request, res: express.Response) {
-  logger.info('heartBeat success', utils.formatDate('yyyy-MM-dd hh:mm:ss'));
+  console.info('heartBeat success', utils.formatDate('yyyy-MM-dd hh:mm:ss'));
   const responseObj = {
     date: utils.formatDate('yyyy-MM-dd hh:mm:ss'),
     runningTime: utils.countRunningTineFunc(launchTime),
@@ -98,9 +95,9 @@ async function heartBeat(req: express.Request, res: express.Response) {
 }
 
 process.on('uncaughtException', (error: Error) => {
-  logger.error('uncaughtException child process', error.stack);
+  console.error('uncaughtException child process', error.stack);
 });
 
 process.on('unhandledRejection', (error: Error) => {
-  logger.error('unhandledRejection child process', error.stack);
+  console.error('unhandledRejection child process', error.stack);
 });
