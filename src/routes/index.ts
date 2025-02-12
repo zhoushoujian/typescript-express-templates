@@ -1,7 +1,7 @@
 import * as express from 'express';
-import { validParam } from '@/utils/middleware';
-import parameter from '@/@types/parameter';
-import { loginVerify } from './login';
+import { validParam } from '../utils/middleware.ts';
+import parameter from '../@types/parameter.ts';
+import { loginVerify } from './login.ts';
 
 // eslint-disable-next-line new-cap
 const router = express.Router();

@@ -1,5 +1,5 @@
 import * as express from 'express';
-import utils from '../utils/utils';
+import utils from '../utils/utils.ts';
 
 export async function loginVerify(req: express.Request, res: express.Response) {
   try {

@@ -1,10 +1,10 @@
 import * as http from 'http';
 import * as os from 'os';
 import express from 'express';
-import * as bodyParser from 'body-parser';
-import utils from '@/utils/utils';
-import CONF from '@/config';
-import routers from '@/routes';
+import bodyParser from 'body-parser';
+import utils from './utils/utils.ts';
+import CONF from './config.ts';
+import routers from './routes/index.ts';
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -16,7 +16,6 @@ httpServer.listen(CONF.APP_PORT, () => {
   );
   process.title = `服务${address}启动成功,正在监听${CONF.APP_PORT}端口`;
 });
-
 //获取ip地址
 let address: string;
 const networks: any = os.networkInterfaces();

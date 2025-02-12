@@ -1,6 +1,6 @@
 import * as express from 'express';
 import Parameter from 'parameter';
-import utils from './utils';
+import utils from './utils.ts';
 
 export const validParam = (
   req: express.Request,

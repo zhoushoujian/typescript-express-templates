@@ -4,7 +4,7 @@
 
 ## 框架
 
-nodejs + express + ts + eslint + husky
+nodejs(16+) + express + ts + eslint + husky + prettier + es modules
 
 ## 安装
 
