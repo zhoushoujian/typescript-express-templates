@@ -1,6 +1,6 @@
 const CONF = {
   DEBUG: false,
-  APP_PORT: 8888,
+  APP_PORT: 8000,
   IS_PRODUCTION: false,
 };
 

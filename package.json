@@ -2,19 +2,15 @@
   "name": "typescript-express-templates",
   "version": "1.1.0",
   "scripts": {
-    "checkcode": "eslint -c .eslintrc.cjs \"./src/**/*.{ts,mts}\" && tsc --noEmit",
-    "start": "node --loader ts-node/esm  src/server.mts",
+    "codeCheck": "eslint -c .eslintrc.cjs \"./src/**/*.{ts,mts}\" && tsc --noEmit",
+    "start": "node --trace-warnings src/index.js",
     "deploy": "npm run start",
     "prepare": "husky install"
   },
   "type": "module",
   "dependencies": {
-    "@llm-tools/embedjs": "0.1.25",
-    "@llm-tools/embedjs-libsql": "0.1.25",
-    "@llm-tools/embedjs-openai": "^0.1.25",
     "body-parser": "^1.20.3",
     "express": "^4.21.2",
-    "openai": "4.76.2",
     "parameter": "^3.6.0"
   },
   "devDependencies": {
@@ -27,7 +23,6 @@
     "esm": "^3.2.25",
     "husky": "^9.1.7",
     "ts-node": "^10.9.2",
-    "ts-node-dev": "^2.0.0",
     "tsconfig-paths": "^4.2.0",
     "typescript": "5.3.3"
   },

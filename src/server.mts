@@ -5,6 +5,9 @@ import bodyParser from 'body-parser';
 import utils from './utils/utils.ts';
 import CONF from './config.ts';
 import routers from './routes/index.ts';
+import { consoleFormat } from './utils/console-format.ts';
+
+consoleFormat();
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -46,7 +49,7 @@ app.all('*', function (req, res, next) {
   if (req.url === '/assets/favicon.ico' || req.url === '/favicon.ico') {
     return res.end();
   }
-  console.info(` server  收到客户端的请求数量`, req.url, req.method, ++i, utils.getIp(req, ''));
+  console.info(`server  收到客户端的请求数量`, req.url, req.method, ++i, utils.getIp(req, ''));
   res.header('Access-Control-Allow-Origin', '*');
   //Access-Control-Allow-Headers ,可根据浏览器的F12查看,把对应的粘贴在这里就行
   res.header(
